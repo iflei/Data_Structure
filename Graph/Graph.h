@@ -94,7 +94,7 @@ public:
 
 	void DFS(const V& src); //深度优先遍历-递归
 
-	void GFS(const V& src); //广度优先遍历-队列
+	void BFS(const V& src); //广度优先遍历-队列
 private:
 	//插入LinkEdge节点
 	void _AddEdge(size_t src, size_t dst, const W& w)
