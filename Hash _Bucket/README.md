@@ -1,5 +1,5 @@
-###��������ϣ��
-�������Ĺ�ϣ���ڱ�ͷvector��������ҵ�������һ���ڵ�ָ�룬�ڵ�������ָ�� _next �� _prev��ÿ�������ĵ�һ���ڵ�� _prev Ϊ�գ����һ���ڵ�� _next Ϊ�գ��պÿ����𵽱�ʶͷβ���á�
-Ϊ������������ṩ�˷��㣬��������++�����������ǰ�ڵ��Ѿ������һ���ڵ㣬��ʱ����Ҫ����ͷ������һ������������λ�á�
-�����и����������ƣ������ڵ������ĳ�Ա����˹�ϣ����ָ�룬HashTable<K, V>* _ht�����ָ��ͨ���������Ĺ��캯���Ѷ����thisָ�봫�������Ϳ����ڵ������������HashTable�����_size, _table��_HashFunc()������Ա����Ȼ���������������ΪHashTable�����Ԫ��
-���µ���_HashFunc������ȡ����ǰkey�ڱ�ͷ���index������һ��_table[index]��ʼ�ҷǿսڵ㡣
+#### 开链法哈希表
+开链法的哈希表在表头vector里存的下面挂的链表第一个节点指针，节点有两个指针 _next 和 _prev，每个链表的第一个节点的 _prev 为空，最后一个节点的 _next 为空，刚好可以起到标识头尾作用。
+为迭代器的设计提供了方便，迭代器的++操作，如果当前节点已经是最后一个节点，这时候需要到表头里找下一个挂有链表的位置。
+这里有个很巧妙的设计，就是在迭代器的成员里加了哈希表的指针，HashTable<K, V>* _ht，这个指针通过迭代器的构造函数把对象的this指针传过来，就可以在迭代器类里访问HashTable对象的_size, _table和_HashFunc()三个成员，当然迭代器类必须设置为HashTable类的友元。
+重新调用_HashFunc函数获取到当前key在表头里的index，从下一个_table[index]开始找非空节点。
