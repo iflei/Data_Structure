@@ -142,6 +142,140 @@ public:
 
 		cout << endl;
 	}
+	
+	bool Kruskal(GraphLink<V, W>& minTree)
+	{
+		//如果是有向图直接return 
+		if (_isDirected == true)
+			return false;
+
+		//minTree是默认构造函数生成的
+		minTree._isDirected = _isDirected;
+		minTree._vertexs = _vertexs;
+		minTree._linkTables.resize(_vertexs.size(), NULL);
+
+		struct Less
+		{
+			bool operator()(Edge* left, Edge* right)
+			{
+				return left->_w < right->_w;
+			}
+		};
+
+		//小堆，把权值小的边在堆顶
+		priority_queue<Edge*, vector<Edge*>, Less> pq; 
+		//遍历邻接表
+		for (size_t i = 0; i < _vertexs.size(); ++i)
+		{
+			Edge* cur = _linkTables[i];
+			while (cur) //邻接表的链没有到尾
+			{
+				if (cur->_src < cur->_dst)
+				{
+					pq.push(cur);
+					//如果_src小于_dst就把这条边放入优先级队列
+					//_src < _dst 保证一条边只添加一次
+				}
+				cur = cur->_next;
+			}
+		}
+
+		//count统计最小生成树添加的边数
+		size_t count = 0;
+		//用并查集保存一个集合中的顶点
+		UnionFind _set(_vertexs.size());
+
+		// 构建最小生成树
+		while (!pq.empty())
+		{
+			Edge* edge = pq.top();//取一条边
+			pq.pop();
+			int src = edge->_src;
+			int dst = edge->_dst;
+			//如果这条边的两个顶点不在一个集合
+			if (false == _set.Find(src, dst))
+			{
+				//给最小生成树添加这条边
+				minTree._AddEdge(src, dst, edge->_w);
+				minTree._AddEdge(dst, src, edge->_w);
+				_set.Union(src, dst); //把这两个顶点放入一个集合
+				++count;
+
+				if (count == _vertexs.size() - 1)
+				{
+					return true;
+				}
+			}
+		}
+		//如果优先级队列里空了，说明所有边都用了
+		return false;
+	}
+
+
+	bool Prim(GraphLink& minTree)
+	{
+		if (_isDirected == true)
+			return false;
+
+		// 1.初始化最小生成树
+		minTree._vertexs = _vertexs;
+		minTree._linkTables.resize(_vertexs.size());
+		minTree._isDirected = _isDirected;
+
+		vector<bool> visited;
+		visited.resize(_vertexs.size(), false);
+
+		struct Less
+		{
+			bool operator()(Edge* left, Edge* right)
+			{
+				return left->_w < right->_w;
+			}
+		};
+		priority_queue<Edge*, vector<Edge*>, Less> pq;
+
+		//从0开始
+		int src = 0;
+		visited[src] = true;
+		
+		int count = 0;
+		while (count < _vertexs.size());
+		{
+			// 2.取出一个顶点所有未访问过的临接边放到一个最小堆里面
+			Edge* cur = _linkTables[src];
+			while (cur)
+			{
+				//如果当前顶点的目标顶点没有访问
+				if (visited[cur->_dst] == false)
+				{
+					pq.push(cur); //把当前边放入优先级队列中
+				}
+				cur = cur->_next;
+			}
+
+			// 2.选出堆中最小的边加入生成树
+			while (!pq.empty() && count < _vertexs.size())
+			{
+				cur = pq.top(); //取出当前顶点临接的最小边
+				pq.pop();
+
+				//如果当前顶点的目标顶点没有访问
+				//如果访问了，会继续从优先级队列里取次小的边
+				if (visited[cur->_dst] == false)
+				{
+					//最小生成树添加边
+					minTree._AddEdge(cur->_src, cur->_dst, cur->_w);
+					visited[cur->_dst] = true; //目标顶点访问过了
+					src = cur->_dst; //接着选出的目标顶点继续
+					++count;
+
+					break;
+				}
+			}
+		}
+
+		return true;
+	}
 private:
 	//插入LinkEdge节点
 	void _AddEdge(size_t src, size_t dst, const W& w)
