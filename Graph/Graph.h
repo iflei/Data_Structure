@@ -92,9 +92,56 @@ public:
 			_AddEdge(dst, src, w);
 	}
 
-	void DFS(const V& src); //深度优先遍历-递归
+	void DFS(const V& src) //深度优先遍历-递归
+	{
+		size_t index = _indexMap[src];
+		
+		//visited标识顶点是否访问过了
+		vector<bool> visited;
+		visited.resize(_vertexs.size(), false);
+		
+		//先访问顶点集合里一个顶点
+		cout << _vertexs[index] << ":" << index << "->";
+		visited[index] = true; //标识访问过了
 
-	void BFS(const V& src); //广度优先遍历-队列
+		_DFS(index, visited);//然后访问下一个临接顶点
+		cout << endl;
+	}
+
+	void BFS(const V& src) //广度优先遍历-队列
+	{
+		queue<int> q;
+		size_t index = _indexMap[src];
+		q.push(index);
+
+		vector<bool> visited;
+		visited.resize(_vertexs.size(), false);
+
+		while (!q.empty())
+		{
+			int front = q.front(); 
+			if (visited[front] == false) //如果没有访问过
+			{
+				cout << _vertexs[front] << ":" << front << "->";
+				visited[front] = true;
+
+				Edge* cur = _linkTables[front];
+				while (cur) //把和当前顶点邻接点，没有访问过的都入队列
+				{
+					int dst = cur->_dst;
+					if (visited[dst] == false)
+					{
+						q.push(dst);
+					}
+
+					cur = cur->_next;
+				}
+			}
+			q.pop(); //该顶点访问过了
+		}
+
+		cout << endl;
+	}
 private:
 	//插入LinkEdge节点
 	void _AddEdge(size_t src, size_t dst, const W& w)
