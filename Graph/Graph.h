@@ -276,6 +276,21 @@ public:
 
 		return true;
 	}
+	
+	void Dijkstra(int src, const W& invalid)
+	{
+		vector<W> dist; //src到其他顶点的的距离
+		dist.resize(_vertexs.size());
+		vector<int> path; //src到其他顶点的路径
+		path.resize(_vertexs.size());
+		vector<bool> vSet; //已选择过的顶点集合
+		vSet.resize(_vertexs.size());
+
+		_Dijkstra_OP(src, dist, path, vSet, _vertexs.size(), invalid);
+
+		// 打印最短路径
+		PrintPath(src, dist, path, _vertexs.size());
+	}
 private:
 	//插入LinkEdge节点
 	void _AddEdge(size_t src, size_t dst, const W& w)
@@ -284,6 +299,192 @@ private:
 		Edge* edge = new Edge(src, dst, w);
 		edge->_next = _linkTables[src];
 		_linkTables[src] = edge;
+	}
+
+	void _DFS(size_t src, vector<bool>& visited)
+	{
+		Edge* cur = _linkTables[src]; //邻接表里对应的指针
+		while (cur) //邻接的顶点没有遍历完
+		{
+			int dst = cur->_dst;
+			if (visited[dst] == false)
+			{
+				cout << _vertexs[dst] << ":" << dst << "->";
+				visited[dst] = true;
+				_DFS(dst, visited);
+			}
+
+			cur = cur->_next;
+		}
+	}
+
+	void _Dijkstra_OP(int src, vector<W>& dist, vector<int>& path, vector<bool>& vSet, int size, const W& invalid)
+	{
+		//
+		// 1.dist初始化src到其他顶点的的距离
+		// 2.path初始化src到其他顶点的路径
+		// 3.初始化顶点集合
+		//
+		for (int i = 0; i < size; ++i)
+		{
+			dist[i] = _GetWeight(src, i, invalid);
+			path[i] = src;
+			vSet[i] = false;
+		}
+
+		struct Compare
+		{
+			bool operator()(const pair<W, int>& lhs, const pair<W, int>& rhs)
+			{
+				return lhs.first < rhs.first;
+			}
+		};
+
+		Heap<pair<W, int>, Compare> minHeap;
+		for (int i = 0; i < size; ++i)
+		{
+			if (dist[i] < maxValue)
+			{
+				minHeap.Push(make_pair(dist[i], i));
+			}
+		}
+
+		// 将src加入集合
+		vSet[src] = true;
+
+		int count = size;
+		while (count--)
+		{
+			//
+			// 选出与src顶点连接的边中最小的边
+			// src->min
+
+			if (minHeap.Empty())
+				continue;
+
+			int minIndex = minHeap.Top().second;
+			minHeap.Pop();
+
+			vSet[minIndex] = true;
+			for (int k = 0; k < size; ++k)
+			{
+				// 
+				// 如果dist(src->min)+dist(min, k)的权值小于dist(src, k)
+				// 则更新dist(src,k)和path(src->min->k)
+				//
+				W w = _GetWeight(minIndex, k, maxValue);
+				if (vSet[k] == false && dist[minIndex] + w < dist[k])
+				{
+					dist[k] = dist[minIndex] + w;
+					path[k] = minIndex;
+
+					minHeap.Push(make_pair(dist[k], k));
+				}
+			}
+		}
+	}
+
+	// 非负单源最短路径--Dijkstra(迪科斯彻)
+	// 求src到其他顶点的最短路径
+	void _Dijkstra(int src, vector<W>& dist, vector<int>& path, vector<bool>& vSet, int size, const W& invalid)
+	{
+		// 1.dist初始化src到其他顶点的的距离
+		// 2.path初始化src到其他顶点的路径
+		// 3.初始化顶点集合
+		for (int i = 0; i < size; ++i)
+		{
+			dist[i] = _GetWeight(src, i, invalid);
+			path[i] = src;
+			vSet[i] = false;
+		}
+
+		// 将src加入集合
+		vSet[src] = true;
+
+		int count = size;
+		while (count--)
+		{
+			// 选出与src顶点连接的边中最小的边
+			// src->min
+			W min = invalid;
+			int minIndex = src;
+			for (i = 0; i < size; ++i)
+			{
+				//i顶点还没有选择过
+				if (vSet[i] == false && dist[i] < min)
+				{
+					minIndex = i;
+					min = dist[i];
+				}
+			}
+			vSet[minIndex] = true;
+
+			for (i = 0; i < size; ++i)
+			{
+				if (i == src)
+					continue;
+
+				// 更新src->i的距离：
+				// 如果dist(src,min)+dist(min, i)的权值小于dist(src, i)
+				// 则更新dist(src,i)和path(src->min->i)
+
+				W w = _GetWeight(minIndex, i, invalid); //minIndex到i的
+				if (vSet[i] == false && dist[minIndex] + w < dist[i])
+				{
+					dist[i] = dist[minIndex] + w;
+					path[i] = minIndex;
+				}
+			}
+		}
+	}
+
+	W _GetWeight(int src, int dst, const W& invalid)
+	{
+		if (src == dst)
+			return invalid;
+
+		Edge* cur = _linkTables[src];
+		while (cur)
+		{
+			if (cur->_dst == dst)
+			{
+				return cur->_w;
+			}
+
+			cur = cur->_next;
+		}
+		return invalid;
+	}
+
+	void PrintPath(int src, vector<W>& dist, vector<int>& path, int size)
+	{
+		vector<int> vPath;
+		vPath.resize(size);
+
+		for (int i = 0; i < size; ++i)
+		{
+			if (i != src)
+			{
+				int index = i, count = 0;
+				do{
+					vPath[count++] = index;
+					index = path[index];
+				} while (index != src);
+
+				vPath[count++] = src;
+
+				//cout<<"顶点："<<_linkTable[src]._vertex\
+								<<"->顶点："<<_linkTable[i]._vertex<<"的路径为：";
+				cout << src << "," << i << "的路径为:";
+				while (count)
+				{
+					//cout<<_linkTable[ vSet[--count] ]._vertex<<"->";
+					cout << vPath[--count] << "->";
+				}
+
+				cout << "路径长度为：" << dist[i] << endl;
+			}
+		}
 	}
 private:
 	vector<V> _vertexs; //顶点集合
